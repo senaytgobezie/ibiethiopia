@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@import '@fontsource-variable/cormorant';
+@theme {
+  --color-primary: #eb9c00;
+  --font-Cormorant: "Cormorant";
+}
+
+.bg-hero {
+  background-image: url("/images/background.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+body {
+    font-family: var(--font-Cormorant);
+  }
+
+  h1 {
+    font-family: var(--font-Cormorant);
+  }
+
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-Cormorant);
+    font-weight: 500;
+  }
