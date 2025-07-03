@@ -87,7 +87,7 @@ export default function ContestantRegister() {
         }
 
         // Redirect to login page instead of dashboard
-        router.push('/contestant/login');
+        router.push('/login');
         setLoading(false);
     };
 

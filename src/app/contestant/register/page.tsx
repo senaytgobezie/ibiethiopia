@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Header from '../../components/Header';
 import { registerContestant } from './actions';
+import { createClient } from '@/utils/supabase/client';
 
 const categories = [
     'Halal',
@@ -22,6 +23,7 @@ export default function ContestantRegister() {
     const [password, setPassword] = useState('');
     const [gender, setGender] = useState('');
     const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
+    const [uploadedFilePath, setUploadedFilePath] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -47,9 +49,41 @@ export default function ContestantRegister() {
                 }
             });
 
-            // Add the file
-            if (paymentScreenshot) {
-                formData.set('payment_screenshot', paymentScreenshot);
+            // Upload file to Supabase storage first
+            if (paymentScreenshot && !uploadedFilePath) {
+                try {
+                    const supabase = createClient();
+
+                    // Ensure bucket exists
+                    const { data: buckets } = await supabase.storage.listBuckets();
+                    if (!buckets?.some(b => b.name === 'payment-screenshots')) {
+                        await supabase.storage.createBucket('payment-screenshots', { public: false });
+                    }
+
+                    // Upload file
+                    const fileExt = paymentScreenshot.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+                    const filePath = `screenshots/${fileName}`;
+
+                    const { data, error: uploadError } = await supabase.storage
+                        .from('payment-screenshots')
+                        .upload(filePath, paymentScreenshot);
+
+                    if (uploadError) {
+                        throw new Error(`File upload failed: ${uploadError.message}`);
+                    }
+
+                    // Store the file path for the server action
+                    setUploadedFilePath(data?.path || '');
+                    formData.set('payment_screenshot_path', data?.path || '');
+                } catch (uploadErr: unknown) {
+                    setError(`Upload error: ${uploadErr instanceof Error ? uploadErr.message : String(uploadErr)}`);
+                    setLoading(false);
+                    return;
+                }
+            } else if (uploadedFilePath) {
+                // If we already uploaded the file, pass the path
+                formData.set('payment_screenshot_path', uploadedFilePath);
             }
 
             // Call the server action
@@ -158,6 +192,11 @@ export default function ContestantRegister() {
                                         onChange={e => setPaymentScreenshot(e.target.files?.[0] || null)}
                                         name="payment_screenshot"
                                     />
+                                    {uploadedFilePath && (
+                                        <div className="text-green-600 text-sm mt-1">
+                                            ✓ File uploaded successfully
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex justify-end gap-2">
                                     <button

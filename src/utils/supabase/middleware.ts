@@ -2,75 +2,55 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-    let supabaseResponse = NextResponse.next({
-        request,
+    // Create a response object that we'll modify
+    const response = NextResponse.next({
+        request: {
+            headers: request.headers,
+        },
     })
 
-    // Create a cookie handler for the middleware
-    const cookieHandler = {
-        get(name: string) {
-            return request.cookies.get(name)
-        },
-        set(name: string, value: string, options: any) {
-            request.cookies.set(name, value)
-            supabaseResponse = NextResponse.next({
-                request,
-            })
-            supabaseResponse.cookies.set(name, value, options)
-        },
-    }
-
+    // Create a Supabase client using the request cookies
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
                 get(name) {
-                    return cookieHandler.get(name)?.value
+                    return request.cookies.get(name)?.value
                 },
                 set(name, value, options) {
-                    cookieHandler.set(name, value, options)
+                    // Set the cookie in the response
+                    response.cookies.set(name, value, options)
                 },
                 remove(name, options) {
-                    cookieHandler.set(name, '', options)
+                    // Remove the cookie from the response
+                    response.cookies.set(name, '', { ...options, maxAge: 0 })
                 },
             },
         }
     )
 
-    // Do not run code between createServerClient and
-    // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-    // issues with users being randomly logged out.
+    // IMPORTANT: Call getUser to refresh the session if needed
+    const { data: { session } } = await supabase.auth.getSession()
 
-    // IMPORTANT: DO NOT REMOVE auth.getUser()
+    // Get the current URL path
+    const path = request.nextUrl.pathname
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Allow access to public routes regardless of auth status
+    const isPublicRoute =
+        path === '/' ||
+        path.startsWith('/login') ||
+        path.startsWith('/auth') ||
+        path.startsWith('/register') ||
+        path.startsWith('/contestant/register')
 
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth')
-    ) {
-        // no user, potentially respond by redirecting the user to the login page
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        return NextResponse.redirect(url)
+    // If user is not authenticated and tries to access a protected route
+    if (!session && !isPublicRoute) {
+        // Redirect to login page with the return URL
+        const redirectUrl = new URL('/login', request.url)
+        redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+        return NextResponse.redirect(redirectUrl)
     }
 
-    // IMPORTANT: You *must* return the supabaseResponse object as it is.
-    // If you're creating a new response object with NextResponse.next() make sure to:
-    // 1. Pass the request in it, like so:
-    //    const myNewResponse = NextResponse.next({ request })
-    // 2. Copy over the cookies, like so:
-    //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-    // 3. Change the myNewResponse object to fit your needs, but avoid changing
-    //    the cookies!
-    // 4. Finally:
-    //    return myNewResponse
-    // If this is not done, you may be causing the browser and server to go out
-    // of sync and terminate the user's session prematurely!
-
-    return supabaseResponse
+    return response
 }

@@ -1,13 +1,16 @@
-'use client';
 import Sidebar from '../components/Sidebar';
-
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import SubmitButton from '../components/SubmitButton';
 
 export default async function ContestantDashboard() {
+    // Create client
     const supabase = await createClient()
 
+    // Check authentication - always use getUser() for security
     const { data, error } = await supabase.auth.getUser()
+
+    // If no authenticated user, redirect to login
     if (error || !data?.user) {
         redirect('/login')
     }
@@ -23,12 +26,7 @@ export default async function ContestantDashboard() {
                     <p className="text-secondary text-lg text-center mb-2 text-white">
                         Ready to compete? Submit your work below!
                     </p>
-                    <button
-                        className="bg-primary text-white font-bold py-3 px-8 rounded-lg hover:bg-yellow-600 transition font-heading text-lg shadow-lg tracking-wide mb-4"
-                        onClick={() => window.location.href = '/contestant/submit'}
-                    >
-                        Submit Your Work
-                    </button>
+                    <SubmitButton />
                 </div>
             </main>
         </div>

@@ -1,8 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabaseClient';
+import React, { useState, useRef } from 'react';
 import Sidebar from '../../components/Sidebar';
 
 export default function SubmitEntry() {
@@ -12,23 +10,7 @@ export default function SubmitEntry() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [checkingAuth, setCheckingAuth] = useState(true);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const router = useRouter();
-
-    useEffect(() => {
-        async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                router.push('/contestant/login?redirect=/contestant/submit');
-            } else {
-                setIsAuthenticated(true);
-            }
-            setCheckingAuth(false);
-        }
-        checkAuth();
-    }, [router]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -57,27 +39,6 @@ export default function SubmitEntry() {
         }
 
         try {
-            // Get the current session to extract the access token
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-            if (sessionError) {
-                console.error('Session error:', sessionError);
-                setError('Authentication error: ' + sessionError.message);
-                setLoading(false);
-                return;
-            }
-
-            if (!session) {
-                console.error('No session found');
-                setError('You must be logged in to submit work. Please log in again.');
-                router.push('/contestant/login?redirect=/contestant/submit');
-                setLoading(false);
-                return;
-            }
-
-            console.log('Session found, user ID:', session.user.id);
-            const accessToken = session.access_token;
-
             const formData = new FormData();
             formData.append('title', title);
             formData.append('description', description);
@@ -86,11 +47,8 @@ export default function SubmitEntry() {
             console.log('Submitting form with file:', file.name);
             const res = await fetch('/api/submit-work', {
                 method: 'POST',
-                headers: {
-                    'x-supabase-auth': accessToken
-                },
                 body: formData,
-                credentials: 'include',
+                credentials: 'include', // Include cookies for authentication
             });
 
             const data = await res.json();
@@ -114,21 +72,6 @@ export default function SubmitEntry() {
         }
     };
 
-    if (checkingAuth) {
-        return (
-            <div className="min-h-screen bg-white flex flex-row">
-                <Sidebar />
-                <main className="flex-1 flex items-center justify-center">
-                    <div className="text-xl">Loading...</div>
-                </main>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated) {
-        return null; // Will redirect in useEffect
-    }
-
     return (
         <div className="min-h-screen bg-white flex flex-row">
             <Sidebar />
@@ -151,7 +94,6 @@ export default function SubmitEntry() {
                             onChange={e => setDescription(e.target.value)}
                             required
                         />
-                        {/* Use ref to clear the file input after successful submission */}
                         <input
                             className="w-full p-2 rounded bg-background border border-accent text-text"
                             type="file"

@@ -14,10 +14,10 @@ export default function Home() {
                             Please select your portal to continue. Only registered contestants and judges can access their respective dashboards.
                         </p>
                         <div className="flex flex-row gap-4 w-full">
-                            <Link href="/contestant/login" className="w-full">
+                            <Link href="/login" className="w-full">
                                 <Button className="w-80%">Contestant Login</Button>
                             </Link>
-                            <Link href="/judge/login" className="w-full">
+                            <Link href="/login?type=judge" className="w-full">
                                 <Button className="w-80%">Judges Login</Button>
                             </Link>
                         </div>

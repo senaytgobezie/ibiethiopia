@@ -1,22 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IBI Ethiopia
 
-## Getting Started
+## Profile Feature Update
 
-First, run the development server:
+We've added a new profile section for contestants with the following features:
+- Edit personal information (name, email, phone, gender)
+- Select categories of interest
+
+## Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Generate Database Types
+
+To update the TypeScript types for the database:
+
+```bash
+npm run generate-database-types
+```
+
+This will update the types in `src/utils/database-types.ts`.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

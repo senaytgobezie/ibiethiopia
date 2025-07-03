@@ -1,28 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/utils/supabaseClient';
-import { checkStoragePermissions } from '../check-storage';
+import { useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function TestStorage() {
     const [file, setFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
     const [uploadResult, setUploadResult] = useState<any>(null);
-    const [permissionsResult, setPermissionsResult] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        async function checkPermissions() {
-            try {
-                const result = await checkStoragePermissions();
-                setPermissionsResult(result);
-            } catch (e) {
-                console.error('Error checking permissions:', e);
-                setError('Error checking permissions');
-            }
-        }
-        checkPermissions();
-    }, []);
+    const [error, setError] = useState<string | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -36,82 +21,114 @@ export default function TestStorage() {
             return;
         }
 
-        setLoading(true);
-        setError('');
+        setUploading(true);
+        setError(null);
         setUploadResult(null);
 
         try {
+            const supabase = createClient();
+
+            // Check if bucket exists
+            const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+
+            if (bucketsError) {
+                throw new Error(`Error listing buckets: ${bucketsError.message}`);
+            }
+
+            console.log('Available buckets:', buckets);
+
+            // Create bucket if it doesn't exist
+            if (!buckets.some(b => b.name === 'payment-screenshots')) {
+                const { data: newBucket, error: createError } = await supabase.storage.createBucket('payment-screenshots', {
+                    public: false
+                });
+
+                if (createError) {
+                    throw new Error(`Error creating bucket: ${createError.message}`);
+                }
+
+                console.log('Created new bucket:', newBucket);
+            }
+
+            // Upload file
             const fileExt = file.name.split('.').pop();
-            const fileName = `test_${Date.now()}.${fileExt}`;
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
             const filePath = `test/${fileName}`;
 
-            console.log('Uploading file:', filePath);
-
-            const { data, error: uploadError } = await supabase.storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('payment-screenshots')
                 .upload(filePath, file);
 
             if (uploadError) {
-                console.error('Upload error:', uploadError);
-                setError(`Upload failed: ${uploadError.message}`);
-            } else {
-                console.log('Upload successful:', data);
-                setUploadResult(data);
+                throw new Error(`Upload error: ${uploadError.message}`);
             }
-        } catch (err) {
-            console.error('Upload exception:', err);
-            setError(`Upload exception: ${err instanceof Error ? err.message : 'Unknown error'}`);
+
+            setUploadResult({
+                success: true,
+                path: uploadData?.path,
+                fullPath: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/payment-screenshots/${uploadData?.path}`
+            });
+
+        } catch (err: any) {
+            console.error('Upload error:', err);
+            setError(err.message || 'An unknown error occurred');
+            setUploadResult({ success: false });
         } finally {
-            setLoading(false);
+            setUploading(false);
         }
     };
 
     return (
-        <div className="p-8">
-            <h1 className="text-2xl font-bold mb-6">Storage Test Page</h1>
+        <div className="p-8 max-w-md mx-auto">
+            <h1 className="text-2xl font-bold mb-4">Test Storage Upload</h1>
 
-            <div className="mb-8 p-4 bg-gray-100 rounded">
-                <h2 className="text-xl font-semibold mb-2">Storage Permissions</h2>
-                {permissionsResult ? (
-                    <pre className="whitespace-pre-wrap bg-white p-4 rounded border">
-                        {JSON.stringify(permissionsResult, null, 2)}
-                    </pre>
-                ) : (
-                    <p>Checking permissions...</p>
-                )}
+            <div className="mb-4">
+                <input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="border p-2 w-full"
+                />
             </div>
 
-            <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-4">Test File Upload</h2>
-                <div className="flex flex-col gap-4">
-                    <input
-                        type="file"
-                        onChange={handleFileChange}
-                        className="border p-2 rounded"
-                    />
-                    <button
-                        onClick={handleUpload}
-                        disabled={loading || !file}
-                        className="bg-blue-500 text-white p-2 rounded disabled:bg-gray-300"
-                    >
-                        {loading ? 'Uploading...' : 'Upload File'}
-                    </button>
+            <button
+                onClick={handleUpload}
+                disabled={uploading || !file}
+                className="bg-blue-500 text-white py-2 px-4 rounded disabled:bg-gray-300"
+            >
+                {uploading ? 'Uploading...' : 'Upload File'}
+            </button>
+
+            {error && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {error}
                 </div>
+            )}
 
-                {error && (
-                    <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
-                        {error}
-                    </div>
-                )}
+            {uploadResult && (
+                <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                    <h3 className="font-bold">{uploadResult.success ? 'Upload Successful!' : 'Upload Failed'}</h3>
+                    {uploadResult.success && (
+                        <div className="mt-2">
+                            <p><strong>Path:</strong> {uploadResult.path}</p>
+                            <p className="mt-1"><strong>Full URL:</strong> {uploadResult.fullPath}</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
-                {uploadResult && (
-                    <div className="mt-4 p-4 bg-green-100 text-green-700 rounded">
-                        <h3 className="font-semibold">Upload Successful!</h3>
-                        <pre className="whitespace-pre-wrap bg-white p-2 mt-2 rounded border">
-                            {JSON.stringify(uploadResult, null, 2)}
-                        </pre>
-                    </div>
-                )}
+            <div className="mt-8 p-4 bg-gray-100 rounded">
+                <h2 className="text-lg font-bold mb-2">Debug Info:</h2>
+                <pre className="whitespace-pre-wrap text-xs">
+                    {JSON.stringify({
+                        file: file ? {
+                            name: file.name,
+                            size: file.size,
+                            type: file.type
+                        } : null,
+                        uploadResult,
+                        error
+                    }, null, 2)}
+                </pre>
             </div>
         </div>
     );

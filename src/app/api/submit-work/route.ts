@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/utils/supabaseClient';
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createServerClient } from '@/utils/supabase/server';
 
 export async function POST(req: NextRequest) {
     try {
@@ -8,28 +7,17 @@ export async function POST(req: NextRequest) {
         const title = formData.get('title') as string;
         const description = formData.get('description') as string;
         const file = formData.get('file') as File;
-        const accessToken = req.headers.get('x-supabase-auth') || '';
 
         // Basic validation
         if (!title || !description || !file) {
             return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
         }
 
-        // Create a new Supabase client with the access token
-        const supabaseWithAuth = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                global: {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                }
-            }
-        );
+        // Create a server-side Supabase client
+        const supabase = await createServerClient();
 
-        // Get user information from the token
-        const { data: { user }, error: userError } = await supabaseWithAuth.auth.getUser();
+        // Get user information from the session
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         if (userError || !user) {
             console.error('Authentication error:', userError);
@@ -45,7 +33,7 @@ export async function POST(req: NextRequest) {
         const filePath = `submissions/${userId}/${fileName}`;
 
         console.log('Uploading file to:', filePath);
-        const { data: uploadData, error: uploadError } = await supabaseWithAuth.storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
             .from('submissions')
             .upload(filePath, file);
 
@@ -57,7 +45,7 @@ export async function POST(req: NextRequest) {
         console.log('File uploaded successfully:', uploadData?.path);
 
         // Get the contestant record for this user
-        const { data: contestantData, error: contestantError } = await supabaseWithAuth
+        const { data: contestantData, error: contestantError } = await supabase
             .from('contestants')
             .select('id')
             .eq('user_id', userId)
@@ -69,12 +57,11 @@ export async function POST(req: NextRequest) {
         if (contestantError || !contestantData) {
             console.log('Contestant not found, creating new contestant record');
 
-            // Get user details
-            const { data: userData } = await supabaseWithAuth.auth.getUser();
-            const email = userData?.user?.email || '';
+            // Get user details from the current session
+            const email = user.email || '';
 
             // Create a new contestant record
-            const { data: newContestant, error: createError } = await supabaseWithAuth
+            const { data: newContestant, error: createError } = await supabase
                 .from('contestants')
                 .insert({
                     user_id: userId,
@@ -95,7 +82,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Store submission in database
-        const { error: submissionError } = await supabaseWithAuth
+        const { error: submissionError } = await supabase
             .from('submissions')
             .insert({
                 contestant_id: contestantId,
@@ -116,8 +103,9 @@ export async function POST(req: NextRequest) {
             message: 'Submission received!',
             filePath: uploadData?.path
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Submission error:', error);
-        return NextResponse.json({ error: error.message || 'Failed to process submission.' }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : 'Failed to process submission.';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 } 
