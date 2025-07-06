@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Sidebar from '../../components/Sidebar';
+import ContestantLayout from '../../components/ContestantLayout';
 
 // Sample notice data - in a real app, this would come from the database
 const notices = [
@@ -54,10 +53,9 @@ export default function NoticesPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState("");
-    const [user, setUser] = useState(null);
 
     // Check authentication on component mount
-    useState(() => {
+    useEffect(() => {
         async function checkAuth() {
             setLoading(true);
             const supabase = createClient();
@@ -70,7 +68,7 @@ export default function NoticesPage() {
                     return;
                 }
 
-                setUser(user);
+                // User is authenticated, continue
             } catch (err) {
                 console.error('Authentication error:', err);
                 router.push('/login');
@@ -92,105 +90,99 @@ export default function NoticesPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-white flex flex-row">
-                <Sidebar />
-                <main className="flex-1 p-8 flex items-center justify-center">
-                    <div className="text-center">
-                        <p className="text-lg">Loading notices...</p>
-                    </div>
-                </main>
-            </div>
+            <ContestantLayout>
+                <div className="text-center">
+                    <p className="text-lg">Loading notices...</p>
+                </div>
+            </ContestantLayout>
         );
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-row">
-            <Sidebar />
-            <main className="flex-1 p-8">
-                <div className="w-full max-w-6xl mx-auto">
-                    <div className="flex justify-between items-center mb-8">
-                        <h1 className="text-3xl font-heading font-bold text-primary">Notice Board</h1>
+        <ContestantLayout>
+            <div className="w-full max-w-6xl mx-auto">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+                    <h1 className="text-3xl font-heading font-bold text-primary mb-4 sm:mb-0">Notice Board</h1>
 
-                        <div className="flex gap-2">
-                            <select
-                                className="bg-gray-100 border border-gray-300 text-gray-700 py-2 px-4 rounded"
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                            >
-                                <option value="">All Categories</option>
-                                <option value="Important">Important</option>
-                                <option value="Event">Events</option>
-                                <option value="Challenge">Challenges</option>
-                                <option value="Announcement">Announcements</option>
-                                <option value="Guidelines">Guidelines</option>
-                            </select>
-                        </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <select
+                            className="bg-gray-100 border border-gray-300 text-gray-700 py-2 px-4 rounded w-full sm:w-auto"
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        >
+                            <option value="">All Categories</option>
+                            <option value="Important">Important</option>
+                            <option value="Event">Events</option>
+                            <option value="Challenge">Challenges</option>
+                            <option value="Announcement">Announcements</option>
+                            <option value="Guidelines">Guidelines</option>
+                        </select>
                     </div>
+                </div>
 
-                    {/* Pinned important notice - always show regardless of filter if there are any */}
-                    {!selectedCategory && importantNotices.length > 0 && (
-                        <div className="mb-8">
-                            <h2 className="text-2xl font-heading font-bold mb-4">Important Updates</h2>
-                            {importantNotices.map(notice => (
-                                <div key={notice.id} className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-lg shadow-md mb-4">
-                                    <div className="flex justify-between items-start">
-                                        <h3 className="text-xl font-bold text-amber-800">{notice.title}</h3>
-                                        {notice.isNew && (
-                                            <span className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full">NEW</span>
-                                        )}
-                                    </div>
-                                    <p className="text-gray-700 mt-2">{notice.content}</p>
-                                    <div className="mt-4 text-sm text-gray-500">
-                                        Posted on {new Date(notice.date).toLocaleDateString()}
+                {/* Pinned important notice - always show regardless of filter if there are any */}
+                {!selectedCategory && importantNotices.length > 0 && (
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-heading font-bold mb-4">Important Updates</h2>
+                        {importantNotices.map(notice => (
+                            <div key={notice.id} className="bg-amber-50 border-l-4 border-amber-500 p-4 sm:p-6 rounded-r-lg shadow-md mb-4 overflow-hidden">
+                                <div className="flex flex-col sm:flex-row justify-between items-start">
+                                    <h3 className="text-xl font-bold text-amber-800 mb-2 sm:mb-0">{notice.title}</h3>
+                                    {notice.isNew && (
+                                        <span className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full mt-1 sm:mt-0">NEW</span>
+                                    )}
+                                </div>
+                                <p className="text-gray-700 mt-2 break-words">{notice.content}</p>
+                                <div className="mt-4 text-sm text-gray-500">
+                                    Posted on {new Date(notice.date).toLocaleDateString()}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* All filtered notices */}
+                <div>
+                    <h2 className="text-2xl font-heading font-bold mb-4">
+                        {selectedCategory ? `${selectedCategory} Notices` : 'All Notices'}
+                    </h2>
+
+                    {filteredNotices.length === 0 ? (
+                        <div className="bg-gray-100 p-8 text-center rounded-lg">
+                            <p className="text-lg text-gray-600">No notices found in this category. Check back later for updates.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {filteredNotices.map(notice => (
+                                <div key={notice.id} className="bg-black rounded-lg shadow-lg border border-accent overflow-hidden">
+                                    <div className="p-4 sm:p-6 text-white">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start mb-3">
+                                            <div className="mb-2 sm:mb-0">
+                                                <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${notice.category === "Important" ? "bg-red-500 text-white" :
+                                                    notice.category === "Event" ? "bg-blue-500 text-white" :
+                                                        notice.category === "Challenge" ? "bg-green-500 text-white" :
+                                                            notice.category === "Announcement" ? "bg-purple-500 text-white" :
+                                                                "bg-gray-500 text-white"
+                                                    }`}>
+                                                    {notice.category}
+                                                </span>
+                                                <h3 className="text-xl font-bold text-accent inline">{notice.title}</h3>
+                                            </div>
+                                            {notice.isNew && (
+                                                <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">NEW</span>
+                                            )}
+                                        </div>
+                                        <p className="text-gray-300 mb-4 break-words">{notice.content}</p>
+                                        <div className="text-sm text-gray-400">
+                                            Posted on {new Date(notice.date).toLocaleDateString()}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
-
-                    {/* All filtered notices */}
-                    <div>
-                        <h2 className="text-2xl font-heading font-bold mb-4">
-                            {selectedCategory ? `${selectedCategory} Notices` : 'All Notices'}
-                        </h2>
-
-                        {filteredNotices.length === 0 ? (
-                            <div className="bg-gray-100 p-8 text-center rounded-lg">
-                                <p className="text-lg text-gray-600">No notices found in this category. Check back later for updates.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                {filteredNotices.map(notice => (
-                                    <div key={notice.id} className="bg-black rounded-lg shadow-lg border border-accent overflow-hidden">
-                                        <div className="p-6 text-white">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div>
-                                                    <span className={`inline-block px-2 py-1 text-xs rounded-full mr-2 ${notice.category === "Important" ? "bg-red-500 text-white" :
-                                                        notice.category === "Event" ? "bg-blue-500 text-white" :
-                                                            notice.category === "Challenge" ? "bg-green-500 text-white" :
-                                                                notice.category === "Announcement" ? "bg-purple-500 text-white" :
-                                                                    "bg-gray-500 text-white"
-                                                        }`}>
-                                                        {notice.category}
-                                                    </span>
-                                                    <h3 className="text-xl font-bold text-accent inline">{notice.title}</h3>
-                                                </div>
-                                                {notice.isNew && (
-                                                    <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">NEW</span>
-                                                )}
-                                            </div>
-                                            <p className="text-gray-300 mb-4">{notice.content}</p>
-                                            <div className="text-sm text-gray-400">
-                                                Posted on {new Date(notice.date).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </ContestantLayout>
     );
 } 

@@ -18,7 +18,7 @@ export default function ContestantLayout({ children }: ContestantLayoutProps) {
     return (
         <div className="min-h-screen bg-white flex flex-row">
             <Sidebar onToggle={handleSidebarToggle} />
-            <main className={`flex-1 p-8 transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+            <main className={`flex-1 p-4 sm:p-6 md:p-8 transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'md:ml-64'}`}>
                 {children}
             </main>
         </div>

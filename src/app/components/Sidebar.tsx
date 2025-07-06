@@ -13,7 +13,27 @@ export default function Sidebar({ onToggle }: SidebarProps) {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
-    // Call the onToggle callback whenever the sidebar state changes
+    // Auto-collapse sidebar on small screens
+    useEffect(() => {
+        const handleResize = () => {
+            const shouldCollapse = window.innerWidth < 768;
+            setIsCollapsed(shouldCollapse);
+            if (onToggle) {
+                onToggle(shouldCollapse);
+            }
+        };
+
+        // Set initial state
+        handleResize();
+
+        // Add event listener
+        window.addEventListener('resize', handleResize);
+
+        // Clean up
+        return () => window.removeEventListener('resize', handleResize);
+    }, [onToggle]);
+
+    // Call the onToggle callback whenever the sidebar state changes manually
     useEffect(() => {
         if (onToggle) {
             onToggle(isCollapsed);
@@ -27,7 +47,7 @@ export default function Sidebar({ onToggle }: SidebarProps) {
                 <div className="w-16 min-h-screen bg-black text-white flex flex-col py-6 px-2 shadow-lg items-center fixed">
                     <button
                         onClick={() => setIsCollapsed(false)}
-                        className="text-gray-400 hover:text-white mb-6"
+                        className="text-gray-400 hover:text-white mb-6 md:block hidden"
                         aria-label="Expand sidebar"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -83,7 +103,7 @@ export default function Sidebar({ onToggle }: SidebarProps) {
 
             {/* Full sidebar - only shows when expanded */}
             {!isCollapsed && (
-                <aside className="w-64 min-h-screen bg-black text-white flex flex-col py-10 px-6 gap-6 shadow-lg items-center fixed">
+                <aside className="w-64 min-h-screen bg-black text-white flex flex-col py-10 px-6 gap-6 shadow-lg items-center fixed hidden md:flex">
                     <div className="w-full flex justify-between items-center mb-6">
                         <Image src="/images/logo transparent.png" alt="IBI Ethiopia Logo" width={90} height={90} />
                         <button

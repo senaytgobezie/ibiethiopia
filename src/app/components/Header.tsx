@@ -18,7 +18,7 @@ export default function Header() {
     }
 
     return (
-        <header className="w-full flex items-center justify-between px-12 py-4 border-b border-accent bg-black shadow-lg m-0 rounded-none z-10" style={{ background: '#000', position: 'sticky', top: 0 }}>
+        <header className="w-full flex items-center justify-between px-12 py-4 border-b border-accent bg-black shadow-lg m-0 rounded-none" style={{ background: '#000' }}>
             <div className="flex items-center gap-4">
                 <Image src="/images/bg.png" alt="Beauty Logo" width={100} height={100} className="object-contain" />
             </div>
