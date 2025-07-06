@@ -18,13 +18,14 @@ export default function Header() {
     }
 
     return (
-        <header className="w-full flex items-center justify-between px-12 py-4 border-b border-accent bg-black shadow-lg m-0 rounded-none" style={{ background: '#000' }}>
+        <header className="w-full flex items-center justify-between px-12 py-4   shadow-lg m-0 rounded-none">
             <div className="flex items-center gap-4">
                 <Image src="/images/bg.png" alt="Beauty Logo" width={100} height={100} className="object-contain" />
             </div>
             <nav className="flex-1 flex justify-center gap-10 text-white font-medium font-Cormorant ">
-                <Link href="/contestant" className=" text-lg hover:text-accent transition text-white ">Home</Link>
-                <Link href="/contestant/submit" className=" text-lg hover:text-accent transition text-white ">About</Link>
+                <Link href="http://stagingtwo.ibiethiopia.com/" className=" text-lg hover:text-accent transition text-white ">Home</Link>
+                <Link href="https://stagingtwo.ibiethiopia.com/about/" className=" text-lg hover:text-accent transition text-white ">About</Link>
+                <Link href="https://stagingtwo.ibiethiopia.com/rules/" className=" text-lg hover:text-accent transition text-white ">Rules</Link>
                 <Link href="/contestant/profile" className=" text-lg hover:text-accent transition text-white ">Submit Your Work</Link>
             </nav>
             <Link href={buttonHref}>
