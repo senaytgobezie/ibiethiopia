@@ -59,10 +59,10 @@ export async function checkStoragePermissions() {
             files
         };
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         return {
             success: false,
-            error: `Storage check exception: ${err.message || 'Unknown error'}`
+            error: `Storage check exception: ${err instanceof Error ? err.message : 'Unknown error'}`
         };
     }
 } 

@@ -3,10 +3,16 @@
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
+interface UploadResult {
+    success: boolean;
+    path?: string;
+    fullPath?: string;
+}
+
 export default function TestStorage() {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [uploadResult, setUploadResult] = useState<any>(null);
+    const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,9 +75,10 @@ export default function TestStorage() {
                 fullPath: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/payment-screenshots/${uploadData?.path}`
             });
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Upload error:', err);
-            setError(err.message || 'An unknown error occurred');
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+            setError(errorMessage);
             setUploadResult({ success: false });
         } finally {
             setUploading(false);
