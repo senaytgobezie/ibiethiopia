@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/src/utils/supabaseClient';
+import { supabase } from '@/utils/supabaseClient';
 
 export async function POST(req: NextRequest) {
     const { email, password, name, gender, phone, payment_phone } = await req.json();
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Insert profile into 'contestant' table
-    const { error: dbError } = await supabase.from('contestant').insert([
+    const { error: dbError } = await supabase.from('contestants').insert([
         {
             user_id: authData.user.id,
             name,
