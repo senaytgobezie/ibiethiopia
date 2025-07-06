@@ -17,14 +17,8 @@ function LoginForm() {
         setIsLoading(true);
         setError(null);
 
-        try {
-            // Call the server action
-            await login(formData, redirectUrl);
-        } catch (err) {
-            setError(typeof err === 'string' ? err : 'Login failed. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
+        await login(formData, redirectUrl);
+
     }
 
     return (
