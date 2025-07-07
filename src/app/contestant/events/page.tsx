@@ -101,7 +101,7 @@ export default function EventsPage() {
         <ContestantLayout>
             <div className="w-full max-w-6xl mx-auto">
                 {/* Hero Section */}
-                <div className="mb-12 bg-gradient-to-r from-amber-700 to-amber-900 rounded-2xl overflow-hidden shadow-xl">
+                <div className="mb-12 bg-gradient-to-r from-amber-600 to-amber-800 rounded-2xl overflow-hidden shadow-xl">
                     <div className="p-8 md:p-12 flex flex-col md:flex-row items-center">
                         <div className="md:w-2/3 mb-6 md:mb-0 md:pr-8">
                             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Upcoming Events</h1>
@@ -168,7 +168,7 @@ export default function EventsPage() {
                         <h2 className="text-2xl font-bold mb-6">Featured Events</h2>
                         <div className="grid grid-cols-1 gap-6">
                             {featuredEvents.map(event => (
-                                <div key={event.id} className="bg-gradient-to-r from-amber-700 to-amber-900 rounded-xl overflow-hidden shadow-lg">
+                                <div key={event.id} className="bg-gradient-to-r from-amber-600 to-amber-800 rounded-xl overflow-hidden shadow-lg">
                                     <div className="p-6 flex flex-col md:flex-row items-center">
                                         <div className="md:w-1/4 flex justify-center mb-6 md:mb-0">
                                             <div className="w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center">
