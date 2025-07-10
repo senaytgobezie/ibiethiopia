@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
+export function createClient(request: NextRequest) {
     // Create a response object that we'll modify
     const response = NextResponse.next({
         request: {
@@ -30,6 +30,12 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
+    return { supabase, response }
+}
+
+export async function updateSession(request: NextRequest) {
+    const { supabase, response } = createClient(request)
+
     // IMPORTANT: Call getUser to refresh the session if needed
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -42,7 +48,8 @@ export async function updateSession(request: NextRequest) {
         path.startsWith('/login') ||
         path.startsWith('/auth') ||
         path.startsWith('/register') ||
-        path.startsWith('/contestant/register')
+        path.startsWith('/contestant/register') ||
+        path.startsWith('/judges/login')
 
     // If user is not authenticated and tries to access a protected route
     if (!session && !isPublicRoute) {
