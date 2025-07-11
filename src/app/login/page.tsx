@@ -11,7 +11,7 @@ function LoginForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const searchParams = useSearchParams();
-    const redirectUrl = searchParams.get('redirect') || '/contestant';
+    const redirectUrl = searchParams.get('redirect') || '/';
 
     async function handleSubmit(formData: FormData) {
         setIsLoading(true);
@@ -23,7 +23,10 @@ function LoginForm() {
 
     return (
         <div className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md">
-            <h1 className="text-2xl text-center font-semibold text-primary mb-6">Contestant Login</h1>
+            <h1 className="text-2xl text-center font-semibold text-primary mb-6">Login</h1>
+            <p className="text-sm text-center text-gray-600 mb-4">
+                For Contestants, Judges, and Administrators
+            </p>
 
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -71,7 +74,11 @@ function LoginForm() {
                 <p className="text-sm text-gray-600">
                     Don&apos;t have an account?{' '}
                     <Link href="/register" className="text-primary hover:underline">
-                        Register here
+                        Register as contestant
+                    </Link>
+                    {' '} | {' '}
+                    <Link href="/judges/login" className="text-primary hover:underline">
+                        Judge login
                     </Link>
                 </p>
             </div>

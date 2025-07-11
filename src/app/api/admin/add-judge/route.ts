@@ -228,7 +228,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse>>
         // Step 2: Create judge profile using the auth user ID
         const judgeData = {
             id: judgeId,
-            user_id: null, // Initially null, will update after confirming user exists
+            user_id: finalAuthUser.id, // Set user_id immediately since we rely on table presence for roles
             name: name.trim(),
             email: email.toLowerCase().trim(),
             bio: bio.trim(),
@@ -271,38 +271,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse>>
             }, { status: 500 });
         }
 
-        console.log(`✅ Judge profile created: ${judgeId}`);
+        console.log(`✅ Judge profile created and linked to user: ${judgeId}`);
 
-        // Step 3: Update judge profile with user_id after confirming user exists
-        // Wait a moment for the auth user to be fully created
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        try {
-            // Verify the user exists in auth.users and update judge profile
-            const { data: verifyUser, error: verifyError } = await adminClient.auth.admin.getUserById(finalAuthUser.id);
-
-            if (verifyError || !verifyUser.user) {
-                console.error('❌ Auth user not found after creation:', verifyError);
-                // User doesn't exist, keep user_id as null but continue
-                console.log('⚠️ Continuing without linking to auth user');
-            } else {
-                // Update judge profile with user_id
-                const { error: updateError } = await supabase
-                    .from('judges')
-                    .update({ user_id: finalAuthUser.id })
-                    .eq('id', judgeId);
-
-                if (updateError) {
-                    console.error('⚠️ Failed to update judge with user_id:', updateError);
-                    // Don't fail here, judge is created successfully
-                } else {
-                    console.log(`✅ Judge profile linked to user: ${finalAuthUser.id}`);
-                }
-            }
-        } catch (linkError) {
-            console.error('⚠️ Error linking judge to user:', linkError);
-            // Don't fail here, judge is created successfully
-        }
+        // Remove the separate linking step since we set user_id immediately
+        // No need for the verification and update steps anymore
 
         // Send credentials email (only if we created a new user, existing users keep their password)
         if (!isExistingUser) {
