@@ -53,7 +53,7 @@ export const sendEmail = async (emailData: EmailData) => {
 };
 
 /**
- * Send judge credentials email
+ * Send judge credentials email to admin
  * @param name Judge's name
  * @param email Judge's email
  * @param password Generated password
@@ -61,32 +61,30 @@ export const sendEmail = async (emailData: EmailData) => {
  */
 export const sendJudgeCredentials = async (name: string, email: string, password: string) => {
     const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+    const adminEmail = 'senaitgobezie@gmail.com'; // Admin email for centralized credential management
     const loginUrl = process.env.NEXT_PUBLIC_BASE_URL
         ? `${process.env.NEXT_PUBLIC_BASE_URL}/judges/login`
         : 'http://localhost:3000/judges/login';
 
-    console.log(`📧 Preparing to send judge credentials to ${email} with login URL: ${loginUrl}`);
+    console.log(`📧 Preparing to send judge credentials to admin ${adminEmail} for judge ${name} (${email}) with login URL: ${loginUrl}`);
 
     const emailData: EmailData = {
-        to: email,
+        to: adminEmail, // Send to admin email instead of judge's email
         from: fromEmail,
-        subject: 'Your Judge Account for Beauty Competition',
+        subject: `New Judge Credentials - ${name} (${email})`,
         html: judgeCredentialsTemplate(name, email, password, loginUrl),
         text: `
-      Welcome to the Beauty Competition!
+      New Judge Account Created
       
-      Dear ${name},
+      A new judge has been added to the Beauty Competition platform:
       
-      You have been registered as a judge for our beauty competition. Here are your login credentials:
-      
-      Email: ${email}
+      Judge Name: ${name}
+      Judge Email: ${email}
       Password: ${password}
       
-      Please log in at: ${loginUrl}
+      Login URL: ${loginUrl}
       
-      We recommend changing your password after your first login.
-      
-      If you have any questions, please don't hesitate to contact us.
+      Please share these credentials with the judge or use them to log in on their behalf.
       
       Best regards,
       The Beauty Competition Team

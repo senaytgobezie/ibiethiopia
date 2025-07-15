@@ -37,7 +37,7 @@ export default function ContestantRegister() {
         setLoading(true);
         setError('');
 
-        // 1. Sign up user
+        // 1. Sign up user (no email confirmation)
         const { data, error: signUpError } = await supabase.auth.signUp({
             email,
             password,

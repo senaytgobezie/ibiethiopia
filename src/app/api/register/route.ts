@@ -4,7 +4,7 @@ import { supabase } from '@/utils/supabaseClient';
 export async function POST(req: NextRequest) {
     const { email, password, name, gender, phone, payment_phone } = await req.json();
 
-    // 1. Register user with Supabase Auth
+    // 1. Register user with Supabase Auth (no email confirmation)
     const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,

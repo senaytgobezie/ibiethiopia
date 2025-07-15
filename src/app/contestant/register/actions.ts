@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 export async function registerContestant(formData: FormData) {
     const supabase = await createClient()
@@ -34,14 +35,34 @@ export async function registerContestant(formData: FormData) {
             }
         })
 
-        // 1. Sign up user with Supabase Auth
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
+        // Create admin client for auto-confirmation
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+        const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+        if (!supabaseServiceRoleKey) {
+            throw new Error('Service role key not configured')
+        }
+
+        const adminClient = createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
         })
 
-        if (signUpError || !authData.user) {
-            throw signUpError?.message || 'Registration failed'
+        // 1. Create user with admin client (auto-confirmed)
+        const { data: authData, error: createUserError } = await adminClient.auth.admin.createUser({
+            email: email.toLowerCase().trim(),
+            password: password,
+            email_confirm: true, // Auto-confirm the user
+            user_metadata: {
+                name: name.trim(),
+                role: 'contestant'
+            }
+        })
+
+        if (createUserError || !authData.user) {
+            throw createUserError?.message || 'User creation failed'
         }
 
         // Handle file upload if no path was provided
@@ -85,8 +106,8 @@ export async function registerContestant(formData: FormData) {
             throw dbError.message
         }
 
-        // Redirect to confirmation page
-        redirect('/auth/confirmation')
+        // Redirect to login page - user is already confirmed
+        redirect('/login')
     } catch (error: unknown) {
         console.error('Registration error:', error)
         throw error instanceof Error ? error.message : String(error)

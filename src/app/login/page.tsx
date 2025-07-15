@@ -1,6 +1,4 @@
 'use client';
-// import { supabase } from '@/utils/supabaseClient';
-// import { useRouter } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -11,19 +9,23 @@ function LoginForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const searchParams = useSearchParams();
-    const redirectUrl = searchParams.get('redirect') || '/contestant';
+    const redirectUrl = searchParams.get('redirect') || '/';
 
     async function handleSubmit(formData: FormData) {
         setIsLoading(true);
         setError(null);
 
-        await login(formData, redirectUrl);
-
+        try {
+            await login(formData, redirectUrl);
+        } catch (error) {
+            setError(error instanceof Error ? error.message : 'Login failed');
+            setIsLoading(false);
+        }
     }
 
     return (
         <div className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md">
-            <h1 className="text-2xl text-center font-semibold text-primary mb-6">Contestant Login</h1>
+            <h1 className="text-2xl text-center font-semibold text-primary mb-6">Login</h1>
 
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -82,7 +84,6 @@ function LoginForm() {
 export default function Login() {
     return (
         <div className="min-h-screen relative bg-black overflow-hidden">
-            {/* Black overlay */}
             <div className="absolute inset-0 bg-black opacity-70 z-10" />
             <div className="relative z-20 w-full">
                 <div style={{ margin: 0 }}>
